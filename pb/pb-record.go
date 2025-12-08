@@ -1,0 +1,82 @@
+package pb
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+)
+
+type PBRecord struct {
+	BaseURL string
+}
+
+// ### CREATE RECORDS ###
+func (record *PBRecord) CreateAuthRecord(collection string, email string, password string, passwordConfirm string, token string) (map[string]any, error) {
+	apiURL := fmt.Sprintf("%s/api/collections/%s/records", record.BaseURL, collection)
+
+	body := map[string]any{
+		"email":           email,
+		"password":        password,
+		"passwordConfirm": passwordConfirm,
+	}
+
+	res, err := SendAuthenticatedHTTPRequest("POST", apiURL, map[string]string{}, body, token)
+
+	if err != nil {
+		return map[string]any{}, err
+	}
+
+	status := res.StatusCode
+
+	if status == http.StatusOK {
+		createdRecord := DecodePocketBaseRecord(res)
+
+		return createdRecord, nil
+	}
+
+	errRes := DecodePocketBaseErrorResponse(res)
+	return map[string]any{}, errors.New(errRes.Message)
+}
+
+func (record *PBRecord) CreateNewRecord(collection string, token string, data map[string]any) (map[string]any, error) {
+	apiURL := fmt.Sprintf("%s/api/collections/%s/records", record.BaseURL, collection)
+
+	res, err := SendAuthenticatedHTTPRequest("POST", apiURL, map[string]string{}, data, token)
+
+	if err != nil {
+		return map[string]any{}, err
+	}
+
+	status := res.StatusCode
+
+	if status == http.StatusOK {
+		createdRecord := DecodePocketBaseRecord(res)
+		return createdRecord, nil
+	}
+
+	errRes := DecodePocketBaseErrorResponse(res)
+	return map[string]any{}, errors.New(errRes.Message)
+}
+
+//### VIEW RECORDS ###
+
+func (record *PBRecord) ViewRecord(collection string, recordId string, token string) (map[string]any, error) {
+	apiUrl := fmt.Sprintf("%s/api/collections/%s/records/%s", record.BaseURL, collection, recordId)
+
+	res, err := SendAuthenticatedHTTPRequest("GET", apiUrl, map[string]string{}, map[string]any{}, token)
+
+	if err != nil {
+		return map[string]any{}, err
+	}
+
+	status := res.StatusCode
+
+	if status == http.StatusOK {
+		record := DecodePocketBaseRecord(res)
+
+		return record, nil
+	}
+
+	errRes := DecodePocketBaseErrorResponse(res)
+	return map[string]any{}, errors.New(errRes.Message)
+}
