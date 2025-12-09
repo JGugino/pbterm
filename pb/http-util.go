@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// Check if expand or fields args have values and construct a url query including it
 func AddExpandAndFieldsToURL(expand string, fields string) string {
 	query := ""
 

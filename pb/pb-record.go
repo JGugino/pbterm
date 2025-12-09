@@ -80,3 +80,24 @@ func (record *PBRecord) ViewRecord(collection string, recordId string, token str
 	errRes := DecodePocketBaseErrorResponse(res)
 	return map[string]any{}, errors.New(errRes.Message)
 }
+
+// ### DELETE RECORDS ###
+func (record *PBRecord) DeleteRecord(collection string, recordId string, token string) (bool, error) {
+	apiUrl := fmt.Sprintf("%s/api/collections/%s/records/%s", record.BaseURL, collection, recordId)
+
+	res, err := SendAuthenticatedHTTPRequest("DELETE", apiUrl, map[string]string{}, map[string]any{}, token)
+
+	if err != nil {
+		return false, err
+	}
+
+	status := res.StatusCode
+
+	if status == http.StatusNoContent {
+		return true, nil
+	}
+
+	pbErr := DecodePocketBaseErrorResponse(res)
+
+	return false, errors.New(pbErr.Message)
+}

@@ -33,13 +33,12 @@ func main() {
 	authToken = success.Token
 	fmt.Printf("User logged in (%s) \n", email)
 
-	record, err := pbRecord.ViewRecord("posts", "otm5rz3l1jz0nwo", authToken)
+	_, err = pbRecord.DeleteRecord("posts", "otm5rz3l1jz0nwo", authToken)
 
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
-	fmt.Println("Found Record")
-	fmt.Println(record)
+	fmt.Printf("Record Deleted (%s)", "otm5rz3l1jz0nwo")
 }
