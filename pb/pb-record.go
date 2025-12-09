@@ -101,3 +101,25 @@ func (record *PBRecord) DeleteRecord(collection string, recordId string, token s
 
 	return false, errors.New(pbErr.Message)
 }
+
+// ### UPDATE RECORDS ###
+func (record *PBRecord) UpdateRecord(collection string, recordId string, token string, updatedData map[string]any) (map[string]any, error) {
+	apiUrl := fmt.Sprintf("%s/api/collections/%s/records/%s", record.BaseURL, collection, recordId)
+
+	res, err := SendAuthenticatedHTTPRequest("PATCH", apiUrl, map[string]string{}, updatedData, token)
+
+	if err != nil {
+		return map[string]any{}, err
+	}
+
+	status := res.StatusCode
+
+	if status == http.StatusOK {
+		decodedRecord := DecodePocketBaseRecord(res)
+		return decodedRecord, nil
+	}
+
+	pbErr := DecodePocketBaseErrorResponse(res)
+
+	return map[string]any{}, errors.New(pbErr.Message)
+}

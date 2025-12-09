@@ -33,12 +33,28 @@ func main() {
 	authToken = success.Token
 	fmt.Printf("User logged in (%s) \n", email)
 
-	_, err = pbRecord.DeleteRecord("posts", "otm5rz3l1jz0nwo", authToken)
+	recordData := map[string]any{
+		"title":   "Example Post",
+		"content": "This is some example content",
+	}
+
+	record, err := pbRecord.CreateNewRecord("posts", authToken, recordData)
 
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
-	fmt.Printf("Record Deleted (%s)", "otm5rz3l1jz0nwo")
+	updatedData := map[string]any{
+		"content": "This is a modified content for the example post",
+	}
+
+	record, err = pbRecord.UpdateRecord("posts", record["id"].(string), authToken, updatedData)
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	fmt.Printf("Record Updated (%s)\n", record["id"])
 }
