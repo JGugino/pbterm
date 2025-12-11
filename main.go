@@ -2,13 +2,20 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/JGugino/pbterm/pb"
+	"github.com/joho/godotenv"
 )
 
 var authToken string = ""
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
 	pbURL := "http://127.0.0.1:8090"
 
@@ -16,12 +23,8 @@ func main() {
 		BaseURL: pbURL,
 	}
 
-	pbRecord := pb.PBRecord{
-		BaseURL: pbURL,
-	}
-
-	email := "gugino.inquires@gmail.com"
-	password := "password123"
+	email := os.Getenv("TESTING_EMAIL")
+	password := os.Getenv("TESTING_PASSWORD")
 
 	success, err := pbAuth.AuthWithPasswordForCollection("_superusers", "", "", email, password)
 
@@ -32,45 +35,4 @@ func main() {
 
 	authToken = success.Token
 	fmt.Printf("User logged in (%s) \n", email)
-
-	options := pb.PocketBaseListOptions{
-		Page:    1,
-		PerPage: 10,
-		Sort:    "-created",
-		Filter:  "",
-	}
-
-	records, err := pbRecord.ListRecords("posts", authToken, options)
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-
-	fmt.Println(records)
-
-	// recordData := map[string]any{
-	// 	"title":   "Example Post",
-	// 	"content": "This is some example content",
-	// }
-
-	// record, err := pbRecord.CreateNewRecord("posts", authToken, recordData)
-
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// 	return
-	// }
-
-	// updatedData := map[string]any{
-	// 	"content": "This is a modified content for the example post",
-	// }
-
-	// record, err = pbRecord.UpdateRecord("posts", record["id"].(string), authToken, updatedData)
-
-	// if err != nil {
-	// 	fmt.Println(err.Error())
-	// 	return
-	// }
-
-	// fmt.Printf("Record Updated (%s)\n", record["id"])
 }
