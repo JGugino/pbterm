@@ -60,6 +60,33 @@ func (record *PBRecord) CreateNewRecord(collection string, token string, data ma
 
 //### VIEW RECORDS ###
 
+func (record *PBRecord) ListRecords(collection string, token string, queryOptions PocketBaseListOptions) (PocketBaseListResponse, error) {
+	apiUrl := fmt.Sprintf("%s/api/collections/%s/records", record.BaseURL, collection)
+
+	queryString, hasOptions := ConstructQueryStringForAPI(queryOptions)
+
+	if hasOptions {
+		apiUrl += queryString
+	}
+
+	res, err := SendAuthenticatedHTTPRequest("GET", apiUrl, map[string]string{}, map[string]any{}, token)
+
+	if err != nil {
+		return PocketBaseListResponse{}, err
+	}
+
+	status := res.StatusCode
+
+	if status == http.StatusOK {
+		record := DecodePocketBaseListResponse(res)
+
+		return record, nil
+	}
+
+	errRes := DecodePocketBaseErrorResponse(res)
+	return PocketBaseListResponse{}, errors.New(errRes.Message)
+}
+
 func (record *PBRecord) ViewRecord(collection string, recordId string, token string) (map[string]any, error) {
 	apiUrl := fmt.Sprintf("%s/api/collections/%s/records/%s", record.BaseURL, collection, recordId)
 

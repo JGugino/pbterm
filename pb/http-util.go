@@ -77,6 +77,15 @@ func DecodePocketBaseRecord(response http.Response) map[string]any {
 	return record
 }
 
+func DecodePocketBaseListResponse(response http.Response) PocketBaseListResponse {
+	record := PocketBaseListResponse{}
+
+	defer response.Body.Close()
+
+	json.NewDecoder(response.Body).Decode(&record)
+	return record
+}
+
 func DecodePocketBaseErrorResponse(response http.Response) PocketBaseErrorResponse {
 	errRes := PocketBaseErrorResponse{}
 

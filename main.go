@@ -33,28 +33,44 @@ func main() {
 	authToken = success.Token
 	fmt.Printf("User logged in (%s) \n", email)
 
-	recordData := map[string]any{
-		"title":   "Example Post",
-		"content": "This is some example content",
+	options := pb.PocketBaseListOptions{
+		Page:    1,
+		PerPage: 10,
+		Sort:    "-created",
+		Filter:  "",
 	}
 
-	record, err := pbRecord.CreateNewRecord("posts", authToken, recordData)
+	records, err := pbRecord.ListRecords("posts", authToken, options)
 
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
 
-	updatedData := map[string]any{
-		"content": "This is a modified content for the example post",
-	}
+	fmt.Println(records)
 
-	record, err = pbRecord.UpdateRecord("posts", record["id"].(string), authToken, updatedData)
+	// recordData := map[string]any{
+	// 	"title":   "Example Post",
+	// 	"content": "This is some example content",
+	// }
 
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
+	// record, err := pbRecord.CreateNewRecord("posts", authToken, recordData)
 
-	fmt.Printf("Record Updated (%s)\n", record["id"])
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return
+	// }
+
+	// updatedData := map[string]any{
+	// 	"content": "This is a modified content for the example post",
+	// }
+
+	// record, err = pbRecord.UpdateRecord("posts", record["id"].(string), authToken, updatedData)
+
+	// if err != nil {
+	// 	fmt.Println(err.Error())
+	// 	return
+	// }
+
+	// fmt.Printf("Record Updated (%s)\n", record["id"])
 }
