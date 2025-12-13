@@ -23,17 +23,86 @@ func (c CollectionType) String() string {
 	}
 }
 
+type CollectionAuthAlerts struct {
+	Enabled       bool                    `json:"enabled"`
+	EmailTemplate CollectionEmailTemplate `json:"emailTemplate"`
+}
+
+type OAuthProviderOptions struct {
+	Name         string `json:"name"`
+	ClientId     string `json:"clientId"`
+	ClientSecret string `json:"clientSecret"`
+	AuthURL      string `json:"authURL"`
+	TokenURL     string `json:"tokenURL"`
+	UserInfoURL  string `json:"userInfoURL"`
+	DisplayName  string `json:"displayName"`
+	PKCE         string `json:"pkce"`
+	Extra        string `json:"extra"`
+}
+
+type CollectionOAuthOptions struct {
+	Enabled      bool `json:"enabled"`
+	MappedFields struct {
+		Id        string `json:"id"`
+		Name      string `json:"name"`
+		Username  string `json:"username"`
+		AvatarURL string `json:"avatarURL"`
+	} `json:"mappedFields"`
+	Providers OAuthProviderOptions
+}
+
+type CollectionTokenOptions struct {
+	Duration int    `json:"duration"`
+	Secret   string `json:""`
+}
+
+type CollectionEmailTemplate struct {
+	Subject string `json:"subject"`
+	Body    string `json:"body"`
+}
+
 type CollectionOptions struct {
-	Name       string           `json:"name"`
-	Type       CollectionType   `json:"type"`
-	Fields     []map[string]any `json:"fields"`
-	System     bool             `json:"system"`
-	ListRule   string           `json:"listRule"`
-	ViewRule   string           `json:"viewRule"`
-	CreateRule string           `json:"createRule"`
-	UpdateRule string           `json:"updateRule"`
-	DeleteRule string           `json:"deleteRule"`
-	ViewQuery  string           `json:"viewQuery"`
+	Name       string               `json:"name"`
+	Type       CollectionType       `json:"type"`
+	Fields     []map[string]any     `json:"fields"`
+	System     bool                 `json:"system"`
+	ListRule   string               `json:"listRule"`
+	ViewRule   string               `json:"viewRule"`
+	CreateRule string               `json:"createRule"`
+	UpdateRule string               `json:"updateRule"`
+	DeleteRule string               `json:"deleteRule"`
+	ViewQuery  string               `json:"viewQuery"`
+	AuthAlerts CollectionAuthAlerts `json:"authAlerts"`
+
+	//Auth Options
+	OAuth2       CollectionOAuthOptions `json:"oauth2"`
+	PasswordAuth struct {
+		Enabled        bool     `json:"enabled"`
+		IdentityFields []string `json:"identityFields"`
+	} `json:"passwordAuth"`
+	MFA struct {
+		Enabled  bool `json:"enabled"`
+		Duration int  `json:"duration"`
+		Rule     bool `json:"rule"`
+	} `json:"mfa"`
+	OTP struct {
+		Enabled       bool                    `json:"enabled"`
+		Duration      int                     `json:"duration"`
+		Length        int                     `json:"length"`
+		EmailTemplate CollectionEmailTemplate `json:"emailTemplate"`
+	} `json:"otp"`
+
+	//Auth Tokens
+	AuthToken          CollectionTokenOptions `json:"authToken"`
+	PasswordResetToken CollectionTokenOptions `json:"passwordResetToken"`
+	EmailChangeToken   CollectionTokenOptions `json:"emailChangeToken"`
+	VerificationToken  CollectionTokenOptions `json:"verificationToken"`
+	FileToken          CollectionTokenOptions `json:"fileToken"`
+
+	//Email Templates
+	VerificationTemplate       CollectionEmailTemplate `json:"verificationTemplate"`
+	ResetPasswordTemplate      CollectionEmailTemplate `json:"resetPasswordTemplate"`
+	ConfirmEmailChangeTemplate CollectionEmailTemplate `json:"confirmEmailChangeTemplate"`
 }
 
 type PBCollection struct {
@@ -41,7 +110,7 @@ type PBCollection struct {
 }
 
 // ### CREATE COLLECTION ###
-func (collection *PBCollection) CreateNewCollection(token string) {
+func (collection *PBCollection) CreateNewCollection(token string, options CollectionOptions) {
 	apiUrl := fmt.Sprintf("%s/api/collections", collection.BaseURL)
 
 	res, err := SendAuthenticatedHTTPRequest("POST", apiUrl, map[string]string{}, map[string]any{}, token)
