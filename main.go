@@ -23,6 +23,10 @@ func main() {
 		BaseURL: pbURL,
 	}
 
+	pbCollection := pb.PBCollection{
+		BaseURL: pbURL,
+	}
+
 	email := os.Getenv("TESTING_EMAIL")
 	password := os.Getenv("TESTING_PASSWORD")
 
@@ -35,4 +39,26 @@ func main() {
 
 	authToken = success.Token
 	fmt.Printf("User logged in (%s) \n", email)
+
+	// options := pb.CollectionOptions{
+	// 	Name:   "testing_collection",
+	// 	Type:   pb.BaseCollection,
+	// 	System: true,
+	// 	Fields: []map[string]any{
+	// 		{
+	// 			"name":     "title",
+	// 			"type":     "text",
+	// 			"required": true,
+	// 		},
+	// 	},
+	// }
+
+	// collection, err := pbCollection.CreateNewCollection(authToken, options)
+
+	_, err = pbCollection.DeleteCollection(authToken, "testing_collection")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 }

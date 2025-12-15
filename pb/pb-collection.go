@@ -1,6 +1,11 @@
 package pb
 
-import "fmt"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+)
 
 type CollectionType int
 
@@ -61,6 +66,22 @@ type CollectionEmailTemplate struct {
 	Body    string `json:"body"`
 }
 
+type CollectionPasswordAuth struct {
+	Enabled        bool     `json:"enabled"`
+	IdentityFields []string `json:"identityFields"`
+}
+type CollectionMFA struct {
+	Enabled  bool `json:"enabled"`
+	Duration int  `json:"duration"`
+	Rule     bool `json:"rule"`
+}
+type CollectionOTP struct {
+	Enabled       bool                    `json:"enabled"`
+	Duration      int                     `json:"duration"`
+	Length        int                     `json:"length"`
+	EmailTemplate CollectionEmailTemplate `json:"emailTemplate"`
+}
+
 type CollectionOptions struct {
 	Name       string               `json:"name"`
 	Type       CollectionType       `json:"type"`
@@ -76,21 +97,9 @@ type CollectionOptions struct {
 
 	//Auth Options
 	OAuth2       CollectionOAuthOptions `json:"oauth2"`
-	PasswordAuth struct {
-		Enabled        bool     `json:"enabled"`
-		IdentityFields []string `json:"identityFields"`
-	} `json:"passwordAuth"`
-	MFA struct {
-		Enabled  bool `json:"enabled"`
-		Duration int  `json:"duration"`
-		Rule     bool `json:"rule"`
-	} `json:"mfa"`
-	OTP struct {
-		Enabled       bool                    `json:"enabled"`
-		Duration      int                     `json:"duration"`
-		Length        int                     `json:"length"`
-		EmailTemplate CollectionEmailTemplate `json:"emailTemplate"`
-	} `json:"otp"`
+	PasswordAuth CollectionPasswordAuth `json:"passwordAuth"`
+	MFA          CollectionMFA          `json:"mfa"`
+	OTP          CollectionOTP          `json:"otp"`
 
 	//Auth Tokens
 	AuthToken          CollectionTokenOptions `json:"authToken"`
@@ -105,21 +114,72 @@ type CollectionOptions struct {
 	ConfirmEmailChangeTemplate CollectionEmailTemplate `json:"confirmEmailChangeTemplate"`
 }
 
+type PocketBaseCollectionResponse struct {
+	Id         string           `json:"id"`
+	Name       string           `json:"name"`
+	Type       string           `json:"type"`
+	Fields     []map[string]any `json:"fields"`
+	System     bool             `json:"system"`
+	ListRule   string           `json:"listRule"`
+	ViewRule   string           `json:"viewRule"`
+	CreateRule string           `json:"createRule"`
+	UpdateRule string           `json:"updateRule"`
+	DeleteRule string           `json:"deleteRule"`
+}
+
 type PBCollection struct {
 	BaseURL string
 }
 
 // ### CREATE COLLECTION ###
-func (collection *PBCollection) CreateNewCollection(token string, options CollectionOptions) {
+func (collection *PBCollection) CreateNewCollection(token string, options CollectionOptions) (PocketBaseCollectionResponse, error) {
 	apiUrl := fmt.Sprintf("%s/api/collections", collection.BaseURL)
 
-	res, err := SendAuthenticatedHTTPRequest("POST", apiUrl, map[string]string{}, map[string]any{}, token)
-
-	if err != nil {
-		return
+	collectionOptions := map[string]any{
+		"name":   options.Name,
+		"type":   options.Type.String(),
+		"fields": options.Fields,
+		"system": options.System,
 	}
 
-	fmt.Println(res)
+	switch options.Type.String() {
+	//Create Auth Collection
+	case AuthCollection.String():
+		collectionOptions["createRule"] = options.CreateRule
+		collectionOptions["updateRule"] = options.UpdateRule
+		collectionOptions["deleteRule"] = options.DeleteRule
+
+		if len(options.PasswordAuth.IdentityFields) > 0 {
+			collectionOptions["passwordAuth"] = options.PasswordAuth
+		}
+
+	//Create View Collection
+	case ViewCollection.String():
+		collectionOptions["listRule"] = options.ListRule
+		collectionOptions["viewRule"] = options.ViewRule
+		collectionOptions["viewQuery"] = options.ViewQuery
+	}
+
+	res, err := SendAuthenticatedHTTPRequest("POST", apiUrl, map[string]string{}, collectionOptions, token)
+
+	if err != nil {
+		return PocketBaseCollectionResponse{}, err
+	}
+
+	status := res.StatusCode
+
+	if status != http.StatusOK {
+		pbErr := DecodePocketBaseErrorResponse(res)
+
+		return PocketBaseCollectionResponse{}, errors.New(pbErr.Message)
+	}
+
+	collectionRes := PocketBaseCollectionResponse{}
+	json.NewDecoder(res.Body).Decode(&collectionRes)
+	defer res.Body.Close()
+
+	return collectionRes, nil
+
 }
 
 // ### UPDATE COLLECTION ###
@@ -174,15 +234,21 @@ func (collection *PBCollection) ListCollections(token string) {
 }
 
 // ### DELETE COLLECTION ###
-func (collection *PBCollection) DeleteCollection(token string, desiredCollection string) {
+func (collection *PBCollection) DeleteCollection(token string, desiredCollection string) (bool, error) {
 	apiUrl := fmt.Sprintf("%s/api/collections/%s", collection.BaseURL, desiredCollection)
 	res, err := SendAuthenticatedHTTPRequest("DELETE", apiUrl, map[string]string{}, map[string]any{}, token)
 
 	if err != nil {
-		return
+		return false, err
 	}
 
-	fmt.Println(res)
+	if res.StatusCode != http.StatusNoContent {
+		pbErr := DecodePocketBaseErrorResponse(res)
+
+		return false, errors.New(pbErr.Message)
+	}
+
+	return true, nil
 }
 
 func (collection *PBCollection) TruncateCollection(token string, desiredCollection string) {
