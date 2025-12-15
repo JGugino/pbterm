@@ -50,7 +50,8 @@ type AuthSuccessResponse struct {
 }
 
 type PBAuth struct {
-	BaseURL string `json:"baseURL"`
+	BaseURL   string `json:"baseURL"`
+	AuthToken string `json:"authToken"`
 }
 
 func (auth *PBAuth) GetPBCollectionsAuthMethods(collection string, fields string) (AuthMethodResponse, error) {
@@ -100,6 +101,8 @@ func (auth *PBAuth) AuthWithPasswordForCollection(collection string, expand stri
 		authSuccessResponse := AuthSuccessResponse{}
 
 		json.NewDecoder(res.Body).Decode(&authSuccessResponse)
+
+		auth.AuthToken = authSuccessResponse.Token
 
 		return authSuccessResponse, nil
 	case http.StatusBadRequest, http.StatusNotFound:

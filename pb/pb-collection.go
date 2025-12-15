@@ -183,30 +183,39 @@ func (collection *PBCollection) CreateNewCollection(token string, options Collec
 }
 
 // ### UPDATE COLLECTION ###
-func (collection *PBCollection) UpdateCollection(token string, desiredCollection string) {
+func (collection *PBCollection) UpdateCollection(token string, desiredCollection string) (map[string]any, error) {
 	apiUrl := fmt.Sprintf("%s/api/collections/%s", collection.BaseURL, desiredCollection)
 	res, err := SendAuthenticatedHTTPRequest("PATCH", apiUrl, map[string]string{}, map[string]any{}, token)
 
 	if err != nil {
-		return
+		return map[string]any{}, err
 	}
 
 	fmt.Println(res)
-
+	return map[string]any{}, nil
 }
 
 // ### VIEW COLLECTION ###
 
-func (collection *PBCollection) ScaffoldCollections(token string, desiredCollection string) {
+func (collection *PBCollection) ScaffoldCollections(token string) (map[string]any, error) {
 	apiUrl := fmt.Sprintf("%s/api/collections/meta/scaffolds", collection.BaseURL)
 	res, err := SendAuthenticatedHTTPRequest("GET", apiUrl, map[string]string{}, map[string]any{}, token)
 
 	if err != nil {
-		return
+		return map[string]any{}, err
 	}
 
-	fmt.Println(res)
+	if res.StatusCode != http.StatusOK {
+		pbErr := DecodePocketBaseErrorResponse(res)
 
+		return map[string]any{}, errors.New(pbErr.Message)
+	}
+
+	scaffoldRes := map[string]any{}
+	json.NewDecoder(res.Body).Decode(&scaffoldRes)
+	defer res.Body.Close()
+
+	return scaffoldRes, nil
 }
 
 func (collection *PBCollection) ViewCollection(token string, desiredCollection string) {
